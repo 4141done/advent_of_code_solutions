@@ -3,8 +3,12 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use std::str::FromStr;
 
-// In which I abuse enums and enumerate the entire combination of hands from one side.
+// In which I abuse enums and enumerate all the possible combinations of hands
+// I know there are some mathematical tricks to calculating Rock Paper Scissors
+// results more succinctly, but I think this approach is more understandable
+// if you don't know the trick. I prefer a match over nested if/else
 fn main() {
+    follow_strategy_guide();
     follow_pt_two();
 }
 
@@ -15,21 +19,19 @@ fn follow_strategy_guide() {
             match line {
                 Ok(str) => {
                     // TODO: this is the hackiest thing ever
-                    let them: OpponentShape =
-                        str.chars().nth(0).unwrap().to_string().parse().unwrap();
-                    let me: MyShape = str.chars().nth(2).unwrap().to_string().parse().unwrap();
-                    println!("Them {:?} <-> Me: {:?}", them, me);
+                    let them: Shape = str.chars().nth(0).unwrap().to_string().parse().unwrap();
+                    let me: Shape = str.chars().nth(2).unwrap().to_string().parse().unwrap();
                     my_score += me as u32;
                     my_score += match (me, them) {
-                        (MyShape::Rock, OpponentShape::Rock) => ResultScore::Draw as u32,
-                        (MyShape::Rock, OpponentShape::Paper) => ResultScore::Loss as u32,
-                        (MyShape::Rock, OpponentShape::Scissors) => ResultScore::Win as u32,
-                        (MyShape::Paper, OpponentShape::Rock) => ResultScore::Win as u32,
-                        (MyShape::Paper, OpponentShape::Paper) => ResultScore::Draw as u32,
-                        (MyShape::Paper, OpponentShape::Scissors) => ResultScore::Loss as u32,
-                        (MyShape::Scissors, OpponentShape::Rock) => ResultScore::Loss as u32,
-                        (MyShape::Scissors, OpponentShape::Paper) => ResultScore::Win as u32,
-                        (MyShape::Scissors, OpponentShape::Scissors) => ResultScore::Draw as u32,
+                        (Shape::Rock, Shape::Rock) => GameResult::Draw as u32,
+                        (Shape::Rock, Shape::Paper) => GameResult::Lose as u32,
+                        (Shape::Rock, Shape::Scissors) => GameResult::Win as u32,
+                        (Shape::Paper, Shape::Rock) => GameResult::Win as u32,
+                        (Shape::Paper, Shape::Paper) => GameResult::Draw as u32,
+                        (Shape::Paper, Shape::Scissors) => GameResult::Lose as u32,
+                        (Shape::Scissors, Shape::Rock) => GameResult::Lose as u32,
+                        (Shape::Scissors, Shape::Paper) => GameResult::Win as u32,
+                        (Shape::Scissors, Shape::Scissors) => GameResult::Draw as u32,
                     }
                 }
                 Err(_) => todo!(),
@@ -46,26 +48,24 @@ fn follow_pt_two() {
         for line in lines {
             match line {
                 Ok(str) => {
-                    // TODO: There's probably a better way to do things
-                    let them: OpponentShape =
-                        str.chars().nth(0).unwrap().to_string().parse().unwrap();
-                    let desired_end: DesiredEnd =
+                    // TODO: this is the hackiest thing ever
+                    let them: Shape = str.chars().nth(0).unwrap().to_string().parse().unwrap();
+                    let desired_end: GameResult =
                         str.chars().nth(2).unwrap().to_string().parse().unwrap();
-                    println!("Them {:?} <-> DesiredEnd: {:?}", them, desired_end);
                     my_score += desired_end as u32;
                     my_score += match (them, desired_end) {
-                        (OpponentShape::Rock, DesiredEnd::Win) => MyShape::Paper as u32,
-                        (OpponentShape::Rock, DesiredEnd::Draw) => MyShape::Rock as u32,
-                        (OpponentShape::Rock, DesiredEnd::Lose) => MyShape::Scissors as u32,
-                        (OpponentShape::Paper, DesiredEnd::Win) => MyShape::Scissors as u32,
-                        (OpponentShape::Paper, DesiredEnd::Draw) => MyShape::Paper as u32,
-                        (OpponentShape::Paper, DesiredEnd::Lose) => MyShape::Rock as u32,
-                        (OpponentShape::Scissors, DesiredEnd::Win) => MyShape::Rock as u32,
-                        (OpponentShape::Scissors, DesiredEnd::Draw) => MyShape::Scissors as u32,
-                        (OpponentShape::Scissors, DesiredEnd::Lose) => MyShape::Paper as u32,
+                        (Shape::Rock, GameResult::Win) => Shape::Paper as u32,
+                        (Shape::Rock, GameResult::Draw) => Shape::Rock as u32,
+                        (Shape::Rock, GameResult::Lose) => Shape::Scissors as u32,
+                        (Shape::Paper, GameResult::Win) => Shape::Scissors as u32,
+                        (Shape::Paper, GameResult::Draw) => Shape::Paper as u32,
+                        (Shape::Paper, GameResult::Lose) => Shape::Rock as u32,
+                        (Shape::Scissors, GameResult::Win) => Shape::Rock as u32,
+                        (Shape::Scissors, GameResult::Draw) => Shape::Scissors as u32,
+                        (Shape::Scissors, GameResult::Lose) => Shape::Paper as u32,
                     }
                 }
-                Err(_) => todo!(),
+                Err(_) => todo!(),GameResult
             }
         }
     }
@@ -74,33 +74,13 @@ fn follow_pt_two() {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum DesiredEnd {
-    Win = 6,
-    Lose = 0,
-    Draw = 3,
-}
-
-impl FromStr for DesiredEnd {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "X" => Ok(Self::Lose),
-            "Y" => Ok(Self::Draw),
-            "Z" => Ok(Self::Win),
-            _ => Err(()),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum MyShape {
+enum Shape {
     Rock = 1,
     Paper = 2,
     Scissors = 3,
 }
 
-impl FromStr for MyShape {
+impl FromStr for Shape {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -108,26 +88,28 @@ impl FromStr for MyShape {
             "X" => Ok(Self::Rock),
             "Y" => Ok(Self::Paper),
             "Z" => Ok(Self::Scissors),
+            "A" => Ok(Self::Rock),
+            "B" => Ok(Self::Paper),
+            "C" => Ok(Self::Scissors),
             _ => Err(()),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum OpponentShape {
-    Rock = 1,
-    Paper = 2,
-    Scissors = 3,
+enum GameResult {
+    Win = 6,
+    Draw = 3,
+    Lose = 0,
 }
 
-impl FromStr for OpponentShape {
+impl FromStr for GameResult {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "A" => Ok(Self::Rock),
-            "B" => Ok(Self::Paper),
-            "C" => Ok(Self::Scissors),
+            "X" => Ok(Self::Lose),
+            "Y" => Ok(Self::Draw),
+            "Z" => Ok(Self::Win),
             _ => Err(()),
         }
     }
