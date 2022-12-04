@@ -3,22 +3,30 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+const LOWERCASE_ASCII_A: u32 = 65;
+const LOWERCASE_ASCII_Z: u32 = 90;
+const LOWERCASE_OFFSET_FROM_ASCII_TO_POINT_VALUE: u32 = 38;
+
+const UPPERCASE_ASCII_A: u32 = 97;
+const UPPERCASE_ASCII_Z: u32 = 122;
+const UPPERCASE_OFFSET_FROM_ASCII_TO_POINT_VALUE: u32 = 96;
+
 fn main() {
     puzzle_one();
     puzzle_two();
 }
 
 fn puzzle_two() {
+    // Collect three elves in a Vector then process
     let mut sum = 0;
     let mut elf_group: Vec<String> = Vec::new();
     if let Ok(lines) = read_lines("./src/input.txt") {
+        // There's a `next_chunk` that exists but it's experimental
         for line in lines {
             match line {
                 Ok(str) => {
                     elf_group.push(str);
-                    println!("vector: {:?} with count: {:?}", elf_group, elf_group.len());
                     if elf_group.len() == 3 {
-                        println!("got three!");
                         let elf_one: HashSet<_> = elf_group[0].chars().collect();
                         let elf_2: HashSet<_> = elf_group[1].chars().collect();
                         let elf_3: HashSet<_> = elf_group[2].chars().collect();
@@ -28,13 +36,12 @@ fn puzzle_two() {
                         // elf's bag, match the criteria of being in all three bagz
                         for common in elf_2.intersection(&elf_3) {
                             if elf_one.contains(common) {
-                                println!("Found a match in: {:?}", common);
                                 // Totally hacking around "char cannot be dereferenced" for now
                                 sum += get_priority(common.clone());
                             }
                         }
 
-                        // Since we were processing a string this time but ignored it, add it to next
+                        // Since we gathered the contents for three elves, we can reset the group
                         elf_group = Vec::new();
                     }
                 }
@@ -87,10 +94,15 @@ fn puzzle_one() {
     println!("Sum of items: {}", sum);
 }
 
+// A lot of magic numbers here
 fn get_priority(item: char) -> u32 {
     match item as u32 {
-        val @ 65..=90 => val as u32 - 38,
-        val @ 97..=122 => val - 96,
+        val @ LOWERCASE_ASCII_A..=LOWERCASE_ASCII_Z => {
+            val as u32 - LOWERCASE_OFFSET_FROM_ASCII_TO_POINT_VALUE
+        }
+        val @ UPPERCASE_ASCII_A..=UPPERCASE_ASCII_Z => {
+            val - UPPERCASE_OFFSET_FROM_ASCII_TO_POINT_VALUE
+        }
         _other => todo!(),
     }
 }
