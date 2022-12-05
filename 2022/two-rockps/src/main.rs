@@ -65,7 +65,7 @@ fn follow_pt_two() {
                         (Shape::Scissors, GameResult::Lose) => Shape::Paper as u32,
                     }
                 }
-                Err(_) => todo!(),GameResult
+                Err(_) => todo!(),
             }
         }
     }
